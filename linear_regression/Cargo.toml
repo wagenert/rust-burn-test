@@ -1,0 +1,14 @@
+[package]
+name = "linear_regression"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+polars = { version = "0.46.0", features = [
+    "lazy",
+    "strings",
+    "dtype-datetime",
+    "timezones",
+    "temporal",
+] }
+burn = { version = "0.16.1", features = ["wgpu"] }
