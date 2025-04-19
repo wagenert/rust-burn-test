@@ -1,4 +1,22 @@
+use itertools::izip;
 use polars::prelude::*;
+
+const EARTH_RADIUS: f64 = 6371.0;
+///
+///Calculates the haversine distance between 2 sets of GPS coordinates in df
+///
+fn haversine_distance(plat: f64, plong: f64, dlat: f64, dlong: f64) -> f64 {
+    let phi1 = plat.to_radians();
+    let phi2 = dlat.to_radians();
+
+    let delta_phi = (dlat - plat).to_radians();
+    let delta_lambda = (dlong - plong).to_radians();
+
+    let a = (delta_phi / 2.0).sin().powi(2)
+        + phi1.cos() * phi2.cos() * (delta_lambda / 2.0).sin().powi(2);
+    let c = 2.0 * libm::atan2(a.sqrt(), (1.0 - a).sqrt());
+    EARTH_RADIUS * c // in kilometers
+}
 
 fn main() {
     let df = CsvReadOptions::default()
@@ -9,7 +27,8 @@ fn main() {
         .expect("Failed to finish reading CSV")
         .lazy();
 
-    let df = df
+    let df_timebased = df
+        .clone()
         .select([col("pickup_datetime")
             .str()
             .to_datetime(
@@ -30,8 +49,52 @@ fn main() {
                 .dt()
                 .weekday()
                 .alias("pickup_weekday"),
-        ])
+        ]);
+
+    let df_distance = df.clone().select([as_struct(vec![
+        col("pickup_latitude"),
+        col("pickup_longitude"),
+        col("dropoff_latitude"),
+        col("dropoff_longitude"),
+    ])
+    .map(
+        |s| {
+            let ca = s.struct_()?;
+            let plat = ca.field_by_name("pickup_latitude")?;
+            let plong = ca.field_by_name("pickup_longitude")?;
+            let dlat = ca.field_by_name("dropoff_latitude")?;
+            let dlong = ca.field_by_name("dropoff_longitude")?;
+            let plat = plat.f64()?;
+            let plong = plong.f64()?;
+            let dlat = dlat.f64()?;
+            let dlong = dlong.f64()?;
+
+            let out: Float64Chunked = izip!(
+                plat.into_iter(),
+                plong.into_iter(),
+                dlat.into_iter(),
+                dlong.into_iter()
+            )
+            .map(|(opt_plat, opt_plong, opt_dlat, opt_dlong)| {
+                match (opt_plat, opt_plong, opt_dlat, opt_dlong) {
+                    (Some(plat), Some(plong), Some(dlat), Some(dlong)) => {
+                        Some(haversine_distance(plat, plong, dlat, dlong))
+                    }
+                    _ => None,
+                }
+            })
+            .collect();
+
+            Ok(Some(out.into_column()))
+        },
+        GetOutput::from_type(DataType::Float64),
+    )
+    .alias("distance")]);
+
+    let merged_lf = concat_lf_horizontal([df, df_timebased, df_distance], UnionArgs::default())
+        .unwrap()
         .collect()
-        .expect("Failed to collect DataFrame");
-    println!("{:?}", df.head(Some(5)));
+        .unwrap();
+    println!("Columns: {:?}", merged_lf.get_column_names());
+    println!("{:?}", merged_lf);
 }

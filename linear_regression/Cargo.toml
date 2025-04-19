@@ -10,5 +10,8 @@ polars = { version = "0.46.0", features = [
     "dtype-datetime",
     "timezones",
     "temporal",
+    "dtype-struct",
 ] }
 burn = { version = "0.16.1", features = ["wgpu"] }
+itertools = "0.14.0"
+libm = "0.2.11"
