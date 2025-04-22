@@ -1,4 +1,6 @@
 use burn::{
+    config::Config,
+    module::Module,
     nn::{BatchNorm, BatchNormConfig, Dropout, DropoutConfig, Linear, LinearConfig, Relu},
     prelude::Backend,
     tensor::Tensor,
@@ -40,7 +42,7 @@ impl TaxifareLinearLayerConfig {
         &self,
         device: &<B as Backend>::Device,
     ) -> Result<TaxifareLinearLayerModel<B>, TaxifareLinearLayerError> {
-        match (self.linear_config, self.norm_config) {
+        match (self.linear_config.clone(), self.norm_config.clone()) {
             (Some(linear_config), Some(norm_config)) => Ok(TaxifareLinearLayerModel {
                 linear_layer: linear_config.init(device),
                 dropout_layer: self.dropout_config.init(),
@@ -56,12 +58,12 @@ impl TaxifareLinearLayerConfig {
 pub struct TaxifareLinearLayerModel<B: Backend> {
     linear_layer: Linear<B>,
     dropout_layer: Dropout,
-    norm_layer: BatchNorm<B, D>,
+    norm_layer: BatchNorm<B, 2>,
     activation: Relu,
 }
 
 impl<B: Backend> TaxifareLinearLayerModel<B> {
-    pub fn forward(&self, linear_data: Tensor<B, D>) -> Tensor<B, D> {
+    pub fn forward(&self, linear_data: Tensor<B, 2>) -> Tensor<B, 2> {
         let mut x = self.linear_layer.forward(linear_data);
         x = self.activation.forward(x);
         x = self.norm_layer.forward(x);
