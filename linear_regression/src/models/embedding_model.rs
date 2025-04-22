@@ -12,17 +12,28 @@ pub struct TaxifareEmbeddingLayerConfig {
     dropout: DropoutConfig,
 }
 
-impl TaxifareEmbeddingLayerConfig {
-    pub fn new(embedding_sizes: Vec<(usize, usize)>, dropout_rate: f64) -> Self {
+impl Default for TaxifareEmbeddingLayerConfig {
+    fn default() -> Self {
         Self {
-            embedding_configs: embedding_sizes
-                .iter()
-                .map(|(number_of_features, number_of_embeddings)| {
-                    EmbeddingConfig::new(*number_of_features, *number_of_embeddings)
-                })
-                .collect(),
-            dropout: DropoutConfig::new(dropout_rate),
+            embedding_configs: Vec::new(),
+            dropout: DropoutConfig::new(0.5),
         }
+    }
+}
+impl TaxifareEmbeddingLayerConfig {
+    pub fn with_embedding_configs(mut self, embedding_sizes: &[(usize, usize)]) -> Self {
+        self.embedding_configs = embedding_sizes
+            .iter()
+            .map(|(num_features, num_embeddings)| {
+                EmbeddingConfig::new(*num_features, *num_embeddings)
+            })
+            .collect();
+        self
+    }
+
+    pub fn with_dropout_rate(mut self, dropout_rate: f64) -> Self {
+        self.dropout = DropoutConfig::new(dropout_rate);
+        self
     }
 
     pub fn init<B: Backend>(&self, device: &<B as Backend>::Device) -> TaxifareEmbeddingModel<B> {
