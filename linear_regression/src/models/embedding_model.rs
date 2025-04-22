@@ -55,13 +55,16 @@ pub struct TaxifareEmbeddingModel<B: Backend> {
 }
 
 impl<B: Backend> TaxifareEmbeddingModel<B> {
-    fn forward(&self, embedding_data: Tensor<B, 3, Int>) -> Tensor<B, 3, Int> {
-        let mut x = self
+    fn forward(&self, input: Tensor<B, 2, Int>) -> Tensor<B, 2> {
+        let input_shape = input.shape();
+        let rows = input_shape.dims[0];
+        let x = self
             .embeddings
             .iter()
             .enumerate()
-            .map(|(i, embed)| embed.forward(embedding_data[i]))
-            .collect();
-        self.dropout_layer.forward(x)
+            .map(|(i, embed)| embed.forward(input.clone().slice([0..rows, i..(i + 1)])))
+            .collect::<Vec<Tensor<B, 3>>>();
+        let raw_output = Tensor::stack(x, 2);
+        self.dropout_layer.forward(raw_output)
     }
 }
