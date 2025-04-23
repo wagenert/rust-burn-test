@@ -1,58 +1,31 @@
 use burn::{
-    config::Config,
     module::Module,
     nn::{BatchNorm, BatchNormConfig, Dropout, DropoutConfig, Linear, LinearConfig, Relu},
     prelude::Backend,
     tensor::Tensor,
 };
 
-#[derive(Debug)]
-pub enum TaxifareLinearLayerError {
-    ConfigurationIncomplete,
-}
-
-#[derive(Config)]
 pub struct TaxifareLinearLayerConfig {
-    linear_config: Option<LinearConfig>,
+    linear_config: LinearConfig,
     dropout_config: DropoutConfig,
-    norm_config: Option<BatchNormConfig>,
+    norm_config: BatchNormConfig,
 }
 
-impl Default for TaxifareLinearLayerConfig {
-    fn default() -> Self {
+impl TaxifareLinearLayerConfig {
+    pub fn new(inputs: usize, outputs: usize, dropout_rate: f64) -> Self {
         Self {
-            linear_config: None,
-            dropout_config: DropoutConfig::new(0.5),
-            norm_config: None,
+            linear_config: LinearConfig::new(inputs, outputs),
+            dropout_config: DropoutConfig::new(dropout_rate),
+            norm_config: BatchNormConfig::new(outputs),
         }
     }
-}
-impl TaxifareLinearLayerConfig {
-    /*
-    pub fn with_linear_config(mut self, inputs: usize, outputs: usize) -> Self {
-        self.linear_config = Some(LinearConfig::new(inputs, outputs));
-        self.norm_config = Some(BatchNormConfig::new(outputs));
-        self
-    }
-    */
 
-    pub fn with_dropout_rate(mut self, dropout_rate: f64) -> Self {
-        self.dropout_config = DropoutConfig::new(dropout_rate);
-        self
-    }
-
-    pub fn init<B: Backend>(
-        &self,
-        device: &<B as Backend>::Device,
-    ) -> Result<TaxifareLinearLayerModel<B>, TaxifareLinearLayerError> {
-        match (self.linear_config.clone(), self.norm_config.clone()) {
-            (Some(linear_config), Some(norm_config)) => Ok(TaxifareLinearLayerModel {
-                linear_layer: linear_config.init(device),
-                dropout_layer: self.dropout_config.init(),
-                norm_layer: norm_config.init(device),
-                activation: Relu::new(),
-            }),
-            _ => Err(TaxifareLinearLayerError::ConfigurationIncomplete),
+    pub fn init<B: Backend>(&self, device: &<B as Backend>::Device) -> TaxifareLinearLayerModel<B> {
+        TaxifareLinearLayerModel {
+            linear_layer: self.linear_config.init(device),
+            dropout_layer: self.dropout_config.init(),
+            norm_layer: self.norm_config.init(device),
+            activation: Relu::new(),
         }
     }
 }

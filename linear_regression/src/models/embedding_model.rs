@@ -1,12 +1,10 @@
 use burn::{
-    config::Config,
     module::Module,
     nn::{Dropout, DropoutConfig, Embedding, EmbeddingConfig},
     prelude::Backend,
     tensor::{Int, Tensor},
 };
 
-#[derive(Config)]
 pub struct TaxifareEmbeddingLayerConfig {
     embedding_configs: Vec<EmbeddingConfig>,
     dropout: DropoutConfig,
@@ -21,19 +19,16 @@ impl Default for TaxifareEmbeddingLayerConfig {
     }
 }
 impl TaxifareEmbeddingLayerConfig {
-    pub fn with_embedding_configs(mut self, embedding_sizes: &[(usize, usize)]) -> Self {
-        self.embedding_configs = embedding_sizes
-            .iter()
-            .map(|(num_features, num_embeddings)| {
-                EmbeddingConfig::new(*num_features, *num_embeddings)
-            })
-            .collect();
-        self
-    }
-
-    pub fn with_dropout_rate(mut self, dropout_rate: f64) -> Self {
-        self.dropout = DropoutConfig::new(dropout_rate);
-        self
+    pub fn new(embedding_sizes: Vec<(usize, usize)>, dropout_rate: f64) -> Self {
+        Self {
+            embedding_configs: embedding_sizes
+                .iter()
+                .map(|(num_features, num_embeddings)| {
+                    EmbeddingConfig::new(*num_features, *num_embeddings)
+                })
+                .collect(),
+            dropout: DropoutConfig::new(dropout_rate),
+        }
     }
 
     pub fn init<B: Backend>(&self, device: &<B as Backend>::Device) -> TaxifareEmbeddingModel<B> {
