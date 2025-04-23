@@ -14,4 +14,4 @@ polars = { version = "0.46.0", features = [
 ] }
 burn = { version = "0.16.1", features = ["wgpu", "train"] }
 itertools = "0.14.0"
-libm = "0.2.11"
+libm = "0.2.13"
