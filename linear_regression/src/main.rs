@@ -1,4 +1,4 @@
-use burn::backend::Wgpu;
+use burn::backend::{Wgpu, wgpu::WgpuDevice};
 use linear_regression::data::create_input_dataset;
 
 fn main() {
@@ -7,5 +7,5 @@ fn main() {
     println!("{:?}", merged_df);
 
     type MyBackend = Wgpu<f32, i32>;
-    let device = Default::default();
+    let device = WgpuDevice::default();
 }
