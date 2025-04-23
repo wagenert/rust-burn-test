@@ -7,7 +7,7 @@ use burn::{
 };
 
 #[derive(Debug)]
-enum TaxifareLinearLayerError {
+pub enum TaxifareLinearLayerError {
     ConfigurationIncomplete,
 }
 
