@@ -6,6 +6,7 @@ use burn::{
     tensor::Tensor,
 };
 
+#[derive(Debug)]
 enum TaxifareLinearLayerError {
     ConfigurationIncomplete,
 }
@@ -27,11 +28,13 @@ impl Default for TaxifareLinearLayerConfig {
     }
 }
 impl TaxifareLinearLayerConfig {
+    /*
     pub fn with_linear_config(mut self, inputs: usize, outputs: usize) -> Self {
         self.linear_config = Some(LinearConfig::new(inputs, outputs));
         self.norm_config = Some(BatchNormConfig::new(outputs));
         self
     }
+    */
 
     pub fn with_dropout_rate(mut self, dropout_rate: f64) -> Self {
         self.dropout_config = DropoutConfig::new(dropout_rate);

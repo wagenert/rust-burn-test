@@ -55,7 +55,7 @@ pub struct TaxifareEmbeddingModel<B: Backend> {
 }
 
 impl<B: Backend> TaxifareEmbeddingModel<B> {
-    fn forward(&self, input: Tensor<B, 2, Int>) -> Tensor<B, 2> {
+    pub fn forward(&self, input: Tensor<B, 2, Int>) -> Tensor<B, 2> {
         let input_shape = input.shape();
         let rows = input_shape.dims[0];
         let x = self
