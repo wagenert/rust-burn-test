@@ -12,15 +12,8 @@ fn custom_init() -> burn::backend::wgpu::WgpuSetup {
 }
 */
 
-fn main() {
-    let merged_df = create_input_dataset("NYCTaxiFares.csv").unwrap();
-    let embedding_df = merged_df
-        .clone()
-        .lazy()
-        .select([col("pickup_hour"), col("pickup_weekday")])
-        .collect()
-        .unwrap();
-    let continuous_df = merged_df
+fn get_continuous_columns(df: &DataFrame) -> (Vec<f64>, [usize; 2]) {
+    let cont_cols = df
         .clone()
         .lazy()
         .select([
@@ -28,16 +21,15 @@ fn main() {
             col("pickup_longitude"),
             col("dropoff_latitude"),
             col("dropoff_longitude"),
-            col("passenger_count"),
+            col("passenger_count").cast(DataType::Float64),
             col("distance"),
         ])
         .collect()
         .unwrap();
-    println!("Columns: {:?}", merged_df.get_column_names());
-    println!("{:?}", merged_df.head(Some(5)));
-    let dims = continuous_df.shape();
+
+    let dims = cont_cols.shape();
     let dims_as_slice = [dims.0, dims.1];
-    let cols = continuous_df
+    let cols = cont_cols
         .get_columns()
         .iter()
         .flat_map(|col| {
@@ -49,15 +41,28 @@ fn main() {
                 .unwrap()
         })
         .collect::<Vec<f64>>();
-    //.collect::<Vec<Vec<f64>>>();
-    //let wgpu_setup = custom_init();
+    (cols, dims_as_slice)
+}
+
+fn main() {
+    let merged_df = create_input_dataset("NYCTaxiFares.csv").unwrap();
+    let embedding_df = merged_df
+        .clone()
+        .lazy()
+        .select([col("pickup_hour"), col("pickup_weekday")])
+        .collect()
+        .unwrap();
+    println!("Columns: {:?}", merged_df.get_column_names());
+    println!("{:?}", merged_df.head(Some(5)));
+    let (cols, dims) = get_continuous_columns(&merged_df);
+    // let wgpu_setup = custom_init();
     type MyBackend = Wgpu<f32, i32>;
     let device: WgpuDevice = Default::default();
 
     let continuous_tensor: Tensor<MyBackend, 2> =
-        Tensor::<MyBackend, 1>::from(cols.as_slice()).reshape::<2, _>(Shape::new(dims_as_slice));
+        Tensor::<MyBackend, 1>::from(cols.as_slice()).reshape::<2, _>(Shape::new(dims));
     let model = ModelConfig::new(vec![(0, 1), (1, 1), (2, 1)], 3, &[64, 32], 0.4)
         .init::<MyBackend>(&device.clone());
 
-    println!("Model: {:?}", model);
+    //println!("Model: {:?}", model);
 }
