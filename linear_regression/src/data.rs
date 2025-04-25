@@ -43,12 +43,37 @@ pub fn create_input_dataset(filename: &str) -> Result<DataFrame, PolarsError> {
             .convert_time_zone("America/New_York".into())
             .alias("dt_pickup_datetime")])
         .with_columns([
-            col("dt_pickup_datetime").dt().hour().alias("pickup_hour"),
+            col("dt_pickup_datetime")
+                .dt()
+                .hour()
+                //.cast(DataType::Categorical(None, CategoricalOrdering::Physical))
+                // Does not work for numeric types
+                .alias("pickup_hour"),
             col("dt_pickup_datetime")
                 .dt()
                 .weekday()
+                .map(
+                    |s| {
+                        let modified_workday: Series = s
+                            .as_series()
+                            .unwrap()
+                            .i8()?
+                            .iter()
+                            .map(|v| v.map(|v| v - 1))
+                            .collect();
+                        Ok(Some(modified_workday.into_column()))
+                    },
+                    GetOutput::from_type(DataType::Int8),
+                )
                 .alias("pickup_weekday"),
-        ]);
+        ])
+        .with_columns([when(col("pickup_hour").lt(lit(12)))
+            .then(lit(0))
+            .otherwise(lit(1))
+            //.then(lit("am"))
+            //.otherwise(lit("pm"))
+            //.cast(DataType::Categorical(None, CategoricalOrdering::Lexical))
+            .alias("am_or_pm")]);
 
     let df_distance = df.clone().select([as_struct(vec![
         col("pickup_latitude"),
