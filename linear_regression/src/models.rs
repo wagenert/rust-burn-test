@@ -27,7 +27,11 @@ impl ModelConfig {
         dropout_rate: f64,
     ) -> Self {
         let mut layer_configuration = layers.to_vec();
-        layer_configuration.insert(0, n_cont + embedding_sizes.len());
+        layer_configuration.insert(
+            0,
+            n_cont + embedding_sizes.iter().map(|ebsz| ebsz.1).sum::<usize>(),
+        );
+        println!("Resulting layer configuration{layer_configuration:?}");
         Self {
             embedding_config: TaxifareEmbeddingLayerConfig::new(embedding_sizes, dropout_rate),
             linear_layers_config: layer_configuration
@@ -69,7 +73,11 @@ impl<B: Backend> Model<B> {
     /// # Shapes
     ///   - Images [batch_size, height, width]
     ///   - Output [batch_size, num_classes]
-    pub fn forward(&self, cat_input: Tensor<B, 2, Int>, cont_input: Tensor<B, 2>) -> Tensor<B, 2> {
+    pub fn forward(
+        &self,
+        cat_input: Vec<Tensor<B, 2, Int>>,
+        cont_input: Tensor<B, 2>,
+    ) -> Tensor<B, 2> {
         let cat_output = self.embedding.forward(cat_input);
         let mut x = Tensor::cat(vec![cont_input, cat_output], 1);
         for layer in &self.linear_layers {
@@ -80,7 +88,7 @@ impl<B: Backend> Model<B> {
 
     pub fn forward_regression(
         &self,
-        cat_input: Tensor<B, 2, Int>,
+        cat_input: Vec<Tensor<B, 2, Int>>,
         cont_input: Tensor<B, 2>,
         targets: Tensor<B, 2, Float>,
     ) -> RegressionOutput<B> {

@@ -44,9 +44,22 @@ fn get_continuous_columns(df: &DataFrame) -> (Vec<f64>, [usize; 2]) {
     (cols, dims_as_slice)
 }
 
-fn main() {
-    let merged_df = create_input_dataset("NYCTaxiFares.csv").unwrap();
-    let embedding_df = merged_df
+fn get_embedding_columns(df: &DataFrame) -> (Vec<Vec<i32>>, Vec<(usize, usize)>) {
+    let embedding_vec = df
+        .columns(["pickup_hour", "pickup_weekday", "am_or_pm"])
+        .unwrap()
+        .iter()
+        .map(|col| {
+            col.cast(&DataType::Int32)
+                .unwrap()
+                .i32()
+                .unwrap()
+                .to_vec_null_aware()
+                .left()
+                .unwrap()
+        })
+        .collect::<Vec<Vec<i32>>>();
+    let embedding_df = df
         .clone()
         .lazy()
         .select([col("pickup_hour"), col("pickup_weekday"), col("am_or_pm")])
@@ -60,32 +73,11 @@ fn main() {
             (no_of_cats, usize::min(no_of_cats / 2, 50))
         })
         .collect::<Vec<(usize, usize)>>();
+    (embedding_vec, embedding_cats)
+}
 
-    println!("Embedding categories: {:?}", embedding_cats);
-
-    let embedding_shape = embedding_df.shape();
-    let embedding_shape_as_slice = [embedding_shape.0, embedding_shape.1];
-    let embedding = embedding_df
-        .get_columns()
-        .iter()
-        .flat_map(|col| {
-            col.clone()
-                .cast(&DataType::Int32)
-                .unwrap()
-                .i32()
-                .unwrap()
-                .to_vec_null_aware()
-                .left()
-                .unwrap()
-        })
-        .collect::<Vec<i32>>();
-
-    //println!("Columns: {:?}", merged_df.get_column_names());
-    //println!("{:?}", merged_df.head(Some(5)));
-    let (cols, dims) = get_continuous_columns(&merged_df);
-    // let wgpu_setup = custom_init();
-    let targets = merged_df
-        .column("fare_amount")
+fn get_target_vector(df: &DataFrame) -> Vec<f64> {
+    df.column("fare_amount")
         .unwrap()
         .cast(&DataType::Float64)
         .unwrap()
@@ -93,21 +85,30 @@ fn main() {
         .unwrap()
         .to_vec_null_aware()
         .left()
-        .unwrap();
+        .unwrap()
+}
+fn main() {
+    let merged_df = create_input_dataset("NYCTaxiFares.csv").unwrap();
+    let (embedding_vec, embedding_cats) = get_embedding_columns(&merged_df);
+    println!("Embedding categories: {:?}", embedding_cats);
+    let (continuous_vec, continuous_dims) = get_continuous_columns(&merged_df);
+    let targets_vec = get_target_vector(&merged_df);
     type MyBackend = Wgpu<f32, i32>;
     let device: WgpuDevice = Default::default();
 
     let continuous_tensor: Tensor<MyBackend, 2> =
-        Tensor::<MyBackend, 1>::from(cols.as_slice()).reshape::<2, _>(Shape::new(dims));
-    let embedding_tensor: Tensor<MyBackend, 2, Int> =
-        Tensor::<MyBackend, 1, Int>::from(embedding.as_slice())
-            .reshape::<2, _>(Shape::new(embedding_shape_as_slice));
+        Tensor::<MyBackend, 1>::from(continuous_vec.as_slice())
+            .reshape::<2, _>(Shape::new(continuous_dims));
+    let embedding_tensor: Vec<Tensor<MyBackend, 2, Int>> = embedding_vec
+        .iter()
+        .map(|col| Tensor::<MyBackend, 1, Int>::from(col.as_slice()).unsqueeze())
+        .collect();
 
-    let targets_tensor: Tensor<MyBackend, 1> = Tensor::<MyBackend, 1>::from(targets.as_slice());
-    let model =
-        ModelConfig::new(embedding_cats, 3, &[64, 32], 0.4).init::<MyBackend>(&device.clone());
+    let targets_tensor: Tensor<MyBackend, 1> = Tensor::<MyBackend, 1>::from(targets_vec.as_slice());
+    let model = ModelConfig::new(embedding_cats, continuous_dims[1], &[64, 32], 0.4)
+        .init::<MyBackend>(&device.clone());
 
-    let output = model.forward(embedding_tensor, continuous_tensor);
-    println!("Output: {:?}", output);
-    //println!("Model: {:?}", model);
+    //let y_pred = model.forward(embedding_tensor, continuous_tensor);
+    //println!("Output: {:?}", y_pred);
+    println!("Model: {:?}", model);
 }
