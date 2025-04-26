@@ -4,15 +4,5 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-polars = { version = "0.46.0", features = [
-    "lazy",
-    "strings",
-    "dtype-datetime",
-    "timezones",
-    "temporal",
-    "dtype-struct",
-    "dtype-categorical",
-] }
+
 burn = { version = "0.17.0", features = ["wgpu", "train"] }
-itertools = "0.14.0"
-libm = "0.2.13"

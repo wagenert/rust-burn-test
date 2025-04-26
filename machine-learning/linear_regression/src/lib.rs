@@ -1,2 +1,2 @@
-pub mod data;
+pub mod batch;
 pub mod models;

@@ -3,7 +3,6 @@ use burn::{
     tensor::{Int, Shape, Tensor},
 };
 use linear_regression::{data::create_input_dataset, models::ModelConfig};
-use polars::prelude::*;
 
 /*
 fn custom_init() -> burn::backend::wgpu::WgpuSetup {
