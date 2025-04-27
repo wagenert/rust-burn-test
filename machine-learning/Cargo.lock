@@ -2850,6 +2850,10 @@ name = "linear_regression"
 version = "0.1.0"
 dependencies = [
  "burn",
+ "csv",
+ "itertools 0.14.0",
+ "rand 0.9.1",
+ "serde",
 ]
 
 [[package]]
