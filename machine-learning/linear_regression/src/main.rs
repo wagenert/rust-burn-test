@@ -1,15 +1,14 @@
 use burn::{
     backend::{Wgpu, wgpu::WgpuDevice},
-    tensor::{Int, Shape, Tensor},
+    data::dataset::Dataset,
 };
-use linear_regression::{data::create_input_dataset, models::ModelConfig};
+use linear_regression::dataset::taxifare_dataset::TaxifareDatasetBuilder;
 
 /*
 fn custom_init() -> burn::backend::wgpu::WgpuSetup {
     let device = Default::default();
     init_setup::<burn::backend::wgpu::Metal>(&device, Default::default())
 }
-*/
 
 fn get_continuous_columns(df: &DataFrame) -> (Vec<f64>, [usize; 2]) {
     let cont_cols = df
@@ -86,15 +85,26 @@ fn get_target_vector(df: &DataFrame) -> Vec<f64> {
         .left()
         .unwrap()
 }
+*/
 fn main() {
+    /*
     let merged_df = create_input_dataset("NYCTaxiFares.csv").unwrap();
     let (embedding_vec, embedding_cats) = get_embedding_columns(&merged_df);
     println!("Embedding categories: {:?}", embedding_cats);
     let (continuous_vec, continuous_dims) = get_continuous_columns(&merged_df);
     let targets_vec = get_target_vector(&merged_df);
+    */
     type MyBackend = Wgpu<f32, i32>;
     let device: WgpuDevice = Default::default();
 
+    let dataset_builder = TaxifareDatasetBuilder::new("../TaxiFaresPrepared.csv", 75, Some(42));
+    let test_dataset = dataset_builder.test();
+    let train_dataset = dataset_builder.train();
+
+    println!("Test dataset: {:?}", test_dataset.len());
+    println!("Train dataset: {:?}", train_dataset.len());
+    println!("Train dataset elem {:?}", train_dataset.get(1));
+    /*
     let continuous_tensor: Tensor<MyBackend, 2> =
         Tensor::<MyBackend, 1>::from(continuous_vec.as_slice())
             .reshape::<2, _>(Shape::new(continuous_dims));
@@ -110,4 +120,5 @@ fn main() {
     //let y_pred = model.forward(embedding_tensor, continuous_tensor);
     //println!("Output: {:?}", y_pred);
     println!("Model: {:?}", model);
+    */
 }
