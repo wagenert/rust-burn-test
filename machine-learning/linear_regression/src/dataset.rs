@@ -1,3 +1,3 @@
-mod mapped_dataset;
+pub mod mapped_dataset;
 mod raw_dataset;
 pub mod taxifare_dataset;

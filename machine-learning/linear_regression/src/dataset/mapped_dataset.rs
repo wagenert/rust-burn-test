@@ -4,9 +4,9 @@ use super::raw_dataset::{TaxifareDatasetRawItem, TaxifareRawDataset};
 
 #[derive(Clone, Debug)]
 pub struct TaxifareDatasetMappedItem {
-    discrete_features: [u8; 3],
-    continuous_features: [f64; 6],
-    label: f64,
+    pub discrete_features: [u8; 3],
+    pub continuous_features: [f64; 6],
+    pub label: f64,
 }
 
 pub struct RawDatafieldToFeaturesMapper;
