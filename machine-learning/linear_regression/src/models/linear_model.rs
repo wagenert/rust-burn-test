@@ -39,18 +39,10 @@ pub struct TaxifareLinearLayerModel<B: Backend> {
 }
 
 impl<B: Backend> TaxifareLinearLayerModel<B> {
-    pub fn forward(&self, linear_data: Tensor<B, 2>) -> Tensor<B, 2> {
+    pub fn forward(&self, linear_data: Tensor<B, 3>) -> Tensor<B, 3> {
         let mut x = self.linear_layer.forward(linear_data);
         x = self.activation.forward(x);
-        let input_norm_dims: [usize; 2] = x.shape().dims();
-        let norm_tensor: Tensor<B, 3> = x.clone().unsqueeze_dims(&[
-            1,
-            input_norm_dims[0] as isize,
-            input_norm_dims[1] as isize,
-        ]);
-        //let norm_tensor = x.clone().unsqueeze();
-        let norm_output_tensor = self.norm_layer.forward::<3>(norm_tensor);
-        println!("Batch Norm Output Shape {:?}", norm_output_tensor.shape());
+        x = self.norm_layer.forward::<3>(x);
         self.dropout_layer.forward(x)
     }
 }

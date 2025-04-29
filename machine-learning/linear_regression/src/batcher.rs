@@ -6,7 +6,7 @@ pub struct TaxifareBatcher;
 
 pub struct TaxifareBatch<B: Backend> {
     pub cont_features: Tensor<B, 3>,
-    pub cat_features: Tensor<B, 3, Int>,
+    pub cat_features: Vec<Tensor<B, 2, Int>>,
     pub predictions: Tensor<B, 2>,
 }
 
@@ -25,8 +25,8 @@ impl<B: Backend> Batcher<B, TaxifareDatasetMappedItem, TaxifareBatch<B>> for Tax
         let cat_features = items
             .iter()
             .map(|item| TensorData::from(item.discrete_features).convert::<B::IntElem>())
-            .map(|data| Tensor::<B, 3, Int>::from_data(data, device))
-            .map(|tensor| tensor.reshape([1, 3, 1]))
+            .map(|data| Tensor::<B, 2, Int>::from_data(data, device))
+            //.map(|tensor| tensor.reshape([1, 3, 1]))
             .collect();
 
         let predictions = items
@@ -36,7 +36,7 @@ impl<B: Backend> Batcher<B, TaxifareDatasetMappedItem, TaxifareBatch<B>> for Tax
             .collect();
 
         let cont_features = Tensor::cat(cont_features, 2);
-        let cat_features = Tensor::cat(cat_features, 2);
+        //let cat_features = Tensor::cat(cat_features, 2);
         let predictions = Tensor::cat(predictions, 1);
         TaxifareBatch {
             cont_features,

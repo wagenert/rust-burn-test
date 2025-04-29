@@ -1,3 +1,5 @@
+use crate::batcher::TaxifareBatch;
+
 use super::embedding_model::{TaxifareEmbeddingLayerConfig, TaxifareEmbeddingModel};
 use super::linear_model::{TaxifareLinearLayerConfig, TaxifareLinearLayerModel};
 use burn::nn::BatchNorm;
@@ -7,7 +9,8 @@ use burn::nn::LinearConfig;
 use burn::nn::loss::MseLoss;
 use burn::nn::loss::Reduction;
 use burn::prelude::*;
-use burn::train::RegressionOutput;
+use burn::tensor::backend::AutodiffBackend;
+use burn::train::{RegressionOutput, TrainOutput, TrainStep, ValidStep};
 use itertools::Itertools;
 
 pub struct ModelConfig {
@@ -54,7 +57,7 @@ impl ModelConfig {
                 .map(|config| config.init(device))
                 .collect(),
             output_layer: self.output_layer_config.init::<B>(device),
-            cont_input_norm_layer: self.cont_norm_layer_config.init::<B, 2>(device),
+            cont_input_norm_layer: self.cont_norm_layer_config.init::<B, 1>(device),
         }
     }
 }
@@ -63,7 +66,7 @@ impl ModelConfig {
 pub struct Model<B: Backend> {
     embedding: TaxifareEmbeddingModel<B>,
     linear_layers: Vec<TaxifareLinearLayerModel<B>>,
-    cont_input_norm_layer: BatchNorm<B, 2>,
+    cont_input_norm_layer: BatchNorm<B, 1>,
     output_layer: Linear<B>,
 }
 
@@ -71,18 +74,24 @@ impl<B: Backend> Model<B> {
     /// # Shapes
     ///   - Images [batch_size, height, width]
     ///   - Output [batch_size, num_classes]
-    pub fn forward(&self, cat_input: Tensor<B, 3, Int>, cont_input: Tensor<B, 3>) -> Tensor<B, 2> {
+    pub fn forward(
+        &self,
+        cat_input: Vec<Tensor<B, 2, Int>>,
+        cont_input: Tensor<B, 3>,
+    ) -> Tensor<B, 2> {
         let cat_output = self.embedding.forward(cat_input);
-        let mut x = Tensor::cat(vec![cont_input, cat_output], 1);
+        let cont_norm_input = self.cont_input_norm_layer.forward(cont_input);
+        let mut x = Tensor::cat(vec![cont_norm_input, cat_output], 1);
         for layer in &self.linear_layers {
             x = layer.forward(x);
         }
-        x
+        x = self.output_layer.forward(x);
+        x.squeeze(0)
     }
 
     pub fn forward_regression(
         &self,
-        cat_input: Tensor<B, 3, Int>,
+        cat_input: Vec<Tensor<B, 2, Int>>,
         cont_input: Tensor<B, 3>,
         targets: Tensor<B, 2>,
     ) -> RegressionOutput<B> {
@@ -94,5 +103,19 @@ impl<B: Backend> Model<B> {
             output,
             targets,
         }
+    }
+}
+
+impl<B: AutodiffBackend> TrainStep<TaxifareBatch<B>, RegressionOutput<B>> for Model<B> {
+    fn step(&self, item: TaxifareBatch<B>) -> TrainOutput<RegressionOutput<B>> {
+        let item = self.forward_regression(item.cat_features, item.cont_features, item.predictions);
+
+        TrainOutput::new(self, item.loss.backward(), item)
+    }
+}
+
+impl<B: Backend> ValidStep<TaxifareBatch<B>, RegressionOutput<B>> for Model<B> {
+    fn step(&self, item: TaxifareBatch<B>) -> RegressionOutput<B> {
+        self.forward_regression(item.cat_features, item.cont_features, item.predictions)
     }
 }
