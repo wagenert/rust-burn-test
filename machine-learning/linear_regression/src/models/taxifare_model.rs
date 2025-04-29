@@ -12,7 +12,9 @@ use burn::prelude::*;
 use burn::tensor::backend::AutodiffBackend;
 use burn::train::{RegressionOutput, TrainOutput, TrainStep, ValidStep};
 use itertools::Itertools;
+use serde::{Deserialize, Serialize};
 
+#[derive(Clone, Serialize, Deserialize)]
 pub struct ModelConfig {
     embedding_config: TaxifareEmbeddingLayerConfig,
     linear_layers_config: Vec<TaxifareLinearLayerConfig>,

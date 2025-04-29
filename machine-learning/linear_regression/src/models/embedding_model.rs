@@ -4,7 +4,9 @@ use burn::{
     prelude::Backend,
     tensor::{Int, Tensor},
 };
+use serde::{Deserialize, Serialize};
 
+#[derive(Clone, Serialize, Deserialize)]
 pub struct TaxifareEmbeddingLayerConfig {
     embedding_configs: Vec<EmbeddingConfig>,
     dropout: DropoutConfig,

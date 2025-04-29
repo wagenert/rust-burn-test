@@ -4,7 +4,9 @@ use burn::{
     prelude::Backend,
     tensor::Tensor,
 };
+use serde::{Deserialize, Serialize};
 
+#[derive(Clone, Serialize, Deserialize)]
 pub struct TaxifareLinearLayerConfig {
     linear_config: LinearConfig,
     dropout_config: DropoutConfig,
