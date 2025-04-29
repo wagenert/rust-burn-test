@@ -2,8 +2,10 @@ use burn::{data::dataloader::batcher::Batcher, prelude::*};
 
 use super::dataset::mapped_dataset::TaxifareDatasetMappedItem;
 
+#[derive(Clone, Default, Debug)]
 pub struct TaxifareBatcher;
 
+#[derive(Clone, Debug)]
 pub struct TaxifareBatch<B: Backend> {
     pub cont_features: Tensor<B, 3>,
     pub cat_features: Vec<Tensor<B, 2, Int>>,
