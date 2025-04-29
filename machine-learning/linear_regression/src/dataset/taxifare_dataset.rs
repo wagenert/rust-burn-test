@@ -33,7 +33,9 @@ impl<'a> TaxifareDatasetBuilder<'a> {
     }
 
     fn init(&self, split: &str) -> Result<TaxifareDataset, std::io::Error> {
-        let dataset = TaxifareRawDatasetBuilder::new(self.file_name, self.seed).init()?;
+        let dataset = TaxifareRawDatasetBuilder::new(self.file_name, self.seed)
+            .init()
+            .expect("Can not read csv file.");
         let dataset = TaxifareMappedDataset::new(dataset, RawDatafieldToFeaturesMapper);
         let dataset_len = dataset.len();
         let split_idx = dataset_len * self.train_test_split_percentage / 100;

@@ -21,15 +21,32 @@ impl<B: Backend> Batcher<B, TaxifareDatasetMappedItem, TaxifareBatch<B>> for Tax
         let cont_features = items
             .iter()
             .map(|item| TensorData::from(item.continuous_features).convert::<B::FloatElem>())
-            .map(|data| Tensor::<B, 3>::from_data(data, device))
+            .map(|data| Tensor::<B, 1>::from_data(data, device))
             .map(|tensor| tensor.reshape([1, 6, 1]))
             .collect();
-        let cat_features = items
+        let cat_weekday = items
             .iter()
-            .map(|item| TensorData::from(item.discrete_features).convert::<B::IntElem>())
-            .map(|data| Tensor::<B, 2, Int>::from_data(data, device))
-            //.map(|tensor| tensor.reshape([1, 3, 1]))
+            .map(|item| TensorData::from([item.discrete_weekday]).convert::<B::IntElem>())
+            .map(|data| Tensor::<B, 1, Int>::from_data(data, device))
+            .map(|tensor| tensor.reshape([1, 1]))
             .collect();
+        let cat_weekday = Tensor::cat(cat_weekday, 1);
+
+        let cat_hour = items
+            .iter()
+            .map(|item| TensorData::from([item.discrete_hour]).convert::<B::IntElem>())
+            .map(|data| Tensor::<B, 1, Int>::from_data(data, device))
+            .map(|tensor| tensor.reshape([1, 1]))
+            .collect();
+        let cat_hour = Tensor::cat(cat_hour, 2);
+
+        let cat_am_or_pm = items
+            .iter()
+            .map(|item| TensorData::from([item.discrete_am_or_pm]).convert::<B::IntElem>())
+            .map(|data| Tensor::<B, 1, Int>::from_data(data, device))
+            .map(|tensor| tensor.reshape([1, 1]))
+            .collect();
+        let cat_am_or_pm = Tensor::cat(cat_am_or_pm, 2);
 
         let predictions = items
             .iter()
@@ -38,7 +55,7 @@ impl<B: Backend> Batcher<B, TaxifareDatasetMappedItem, TaxifareBatch<B>> for Tax
             .collect();
 
         let cont_features = Tensor::cat(cont_features, 2);
-        //let cat_features = Tensor::cat(cat_features, 2);
+        let cat_features = vec![cat_weekday, cat_hour, cat_am_or_pm];
         let predictions = Tensor::cat(predictions, 1);
         TaxifareBatch {
             cont_features,
