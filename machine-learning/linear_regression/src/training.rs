@@ -51,7 +51,7 @@ pub fn train<B: AutodiffBackend>(artifact_dir: &str, config: TrainingConfig, dev
     let test_dataset = dataset_builder.test();
     let train_dataset = dataset_builder.train();
 
-    let batcher = TaxifareBatcher::default();
+    let batcher = TaxifareBatcher;
 
     let dataloader_train = DataLoaderBuilder::new(batcher.clone())
         .batch_size(config.batch_size)

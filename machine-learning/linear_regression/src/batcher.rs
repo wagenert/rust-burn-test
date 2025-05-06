@@ -38,7 +38,7 @@ impl<B: Backend> Batcher<B, TaxifareDatasetMappedItem, TaxifareBatch<B>> for Tax
             .map(|data| Tensor::<B, 1, Int>::from_data(data, device))
             .map(|tensor| tensor.reshape([1, 1]))
             .collect();
-        let cat_hour = Tensor::cat(cat_hour, 2);
+        let cat_hour = Tensor::cat(cat_hour, 1);
 
         let cat_am_or_pm = items
             .iter()
@@ -46,7 +46,7 @@ impl<B: Backend> Batcher<B, TaxifareDatasetMappedItem, TaxifareBatch<B>> for Tax
             .map(|data| Tensor::<B, 1, Int>::from_data(data, device))
             .map(|tensor| tensor.reshape([1, 1]))
             .collect();
-        let cat_am_or_pm = Tensor::cat(cat_am_or_pm, 2);
+        let cat_am_or_pm = Tensor::cat(cat_am_or_pm, 1);
 
         let predictions = items
             .iter()
