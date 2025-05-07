@@ -79,7 +79,7 @@ impl<B: Backend> Model<B> {
     pub fn forward(
         &self,
         cat_input: Vec<Tensor<B, 2, Int>>,
-        cont_input: Tensor<B, 3>,
+        cont_input: Tensor<B, 2>,
     ) -> Tensor<B, 2> {
         let cat_output = self.embedding.forward(cat_input);
         let cont_norm_input = self.cont_input_norm_layer.forward(cont_input);
@@ -94,7 +94,7 @@ impl<B: Backend> Model<B> {
     pub fn forward_regression(
         &self,
         cat_input: Vec<Tensor<B, 2, Int>>,
-        cont_input: Tensor<B, 3>,
+        cont_input: Tensor<B, 2>,
         targets: Tensor<B, 2>,
     ) -> RegressionOutput<B> {
         let output = self.forward(cat_input, cont_input);

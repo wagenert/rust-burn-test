@@ -41,10 +41,10 @@ pub struct TaxifareLinearLayerModel<B: Backend> {
 }
 
 impl<B: Backend> TaxifareLinearLayerModel<B> {
-    pub fn forward(&self, linear_data: Tensor<B, 3>) -> Tensor<B, 3> {
+    pub fn forward(&self, linear_data: Tensor<B, 2>) -> Tensor<B, 2> {
         let mut x = self.linear_layer.forward(linear_data);
         x = self.activation.forward(x);
-        x = self.norm_layer.forward::<3>(x);
+        x = self.norm_layer.forward::<2>(x);
         self.dropout_layer.forward(x)
     }
 }

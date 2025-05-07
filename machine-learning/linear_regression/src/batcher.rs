@@ -7,7 +7,7 @@ pub struct TaxifareBatcher;
 
 #[derive(Clone, Debug)]
 pub struct TaxifareBatch<B: Backend> {
-    pub cont_features: Tensor<B, 3>,
+    pub cont_features: Tensor<B, 2>,
     pub cat_features: Vec<Tensor<B, 2, Int>>,
     pub predictions: Tensor<B, 2>,
 }
@@ -22,13 +22,13 @@ impl<B: Backend> Batcher<B, TaxifareDatasetMappedItem, TaxifareBatch<B>> for Tax
             .iter()
             .map(|item| TensorData::from(item.continuous_features).convert::<B::FloatElem>())
             .map(|data| Tensor::<B, 1>::from_data(data, device))
-            .map(|tensor| tensor.reshape([1, 6, 1]))
+            .map(|tensor| tensor.reshape([1, 6]))
             .collect();
         let cat_weekday = items
             .iter()
             .map(|item| TensorData::from([item.discrete_weekday]).convert::<B::IntElem>())
             .map(|data| Tensor::<B, 1, Int>::from_data(data, device))
-            .map(|tensor| tensor.reshape([1, 1]))
+            .map(|tensor| tensor.reshape([1, 4]))
             .collect();
         let cat_weekday = Tensor::cat(cat_weekday, 1);
 
@@ -36,7 +36,7 @@ impl<B: Backend> Batcher<B, TaxifareDatasetMappedItem, TaxifareBatch<B>> for Tax
             .iter()
             .map(|item| TensorData::from([item.discrete_hour]).convert::<B::IntElem>())
             .map(|data| Tensor::<B, 1, Int>::from_data(data, device))
-            .map(|tensor| tensor.reshape([1, 1]))
+            .map(|tensor| tensor.reshape([1, 12]))
             .collect();
         let cat_hour = Tensor::cat(cat_hour, 1);
 

@@ -1,6 +1,7 @@
 use burn::{
-    backend::{Autodiff, Wgpu, wgpu::WgpuDevice},
+    backend::{Autodiff, Metal},
     optim::AdamConfig,
+    tensor::Device,
 };
 use linear_regression::{models::taxifare_model::ModelConfig, training::TrainingConfig};
 /*
@@ -10,9 +11,9 @@ fn custom_init() -> burn::backend::wgpu::WgpuSetup {
 }
 */
 fn main() {
-    type MyBackend = Wgpu<f32, i32>;
+    type MyBackend = Metal<f32, i32>;
     type MyAutodiffBackend = Autodiff<MyBackend>;
-    let device: WgpuDevice = Default::default();
+    let device = Device::<MyBackend>::default();
     let artifact_dir = "../config";
     linear_regression::training::train::<MyAutodiffBackend>(
         artifact_dir,

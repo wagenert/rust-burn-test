@@ -47,7 +47,7 @@ pub fn train<B: AutodiffBackend>(artifact_dir: &str, config: TrainingConfig, dev
 
     B::seed(config.seed);
 
-    let dataset_builder = TaxifareDatasetBuilder::new("../TaxiFaresPrepared.csv", 75, Some(42));
+    let dataset_builder = TaxifareDatasetBuilder::new("TaxiFaresPrepared.csv", 75, Some(42));
     let test_dataset = dataset_builder.test();
     let train_dataset = dataset_builder.train();
 
